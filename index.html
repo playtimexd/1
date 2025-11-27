@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI+ GAME Producer Portfolio</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 React 和 Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body { background-color: #050505; color: #e5e5e5; }
+        @keyframes shine {
+          0% { background-position: 200% center; }
+          100% { background-position: -200% center; }
+        }
+        .animate-shine {
+          animation: shine 8s linear infinite;
+        }
+        @keyframes gradient-x {
+          0%, 100% { background-size: 200% 200%; background-position: left center; }
+          50% { background-size: 200% 200%; background-position: right center; }
+        }
+        .animate-gradient-x {
+          animation: gradient-x 5s ease infinite;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+
+        // --- 简化的 Icon 组件定义 (替代 lucide-react 库) ---
+        const Icon = ({ path, size = 24, className = "", fill="none" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {path}
+            </svg>
+        );
+
+        const Zap = (p) => <Icon {...p} path={<><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></>} />;
+        const Wand2 = (p) => <Icon {...p} path={<><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/></>} />;
+        const Layers = (p) => <Icon {...p} path={<><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></>} />;
+        const Music = (p) => <Icon {...p} path={<><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></>} />;
+        const Cpu = (p) => <Icon {...p} path={<><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></>} />;
+        const TrendingUp = (p) => <Icon {...p} path={<><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></>} />;
+        const ArrowRight = (p) => <Icon {...p} path={<><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></>} />;
+        const Play = (p) => <Icon {...p} fill="currentColor" path={<polygon points="5 3 19 12 5 21 5 3"/>} />;
+        const Pause = (p) => <Icon {...p} path={<><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></>} />;
+        const ImageIcon = (p) => <Icon {...p} path={<><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></>} />;
+        const Maximize2 = (p) => <Icon {...p} path={<><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" x2="14" y1="3" y2="10"/><line x1="3" x2="10" y1="21" y2="14"/></>} />;
+        const Linkedin = (p) => <Icon {...p} path={<><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></>} />;
+        const Github = (p) => <Icon {...p} path={<><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></>} />;
+        const Mail = (p) => <Icon {...p} path={<><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></>} />;
+        const Database = (p) => <Icon {...p} path={<><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></>} />;
+        const Terminal = (p) => <Icon {...p} path={<><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></>} />;
+        const LayoutTemplate = (p) => <Icon {...p} path={<><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="9" x2="9" y1="9" y2="21"/></>} />;
+        const Lightbulb = (p) => <Icon {...p} path={<><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2.4 1.5-3.8 0-3.2-2.8-5.7-6-5.7s-6 2.5-6 5.7c0 1.4.5 2.8 1.5 3.8.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></>} />;
+        const Workflow = (p) => <Icon {...p} path={<><rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/></>} />;
+        const Rocket = (p) => <Icon {...p} path={<><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></>} />;
+        const Users = (p) => <Icon {...p} path={<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>} />;
+
+        // --- 核心业务代码 ---
+        
+        const CompareSlider = ({ beforeImage, afterImage }) => {
+          const [sliderPosition, setSliderPosition] = useState(50);
+          const containerRef = useRef(null);
+
+          const handleMove = (event) => {
+            if (!containerRef.current) return;
+            const rect = containerRef.current.getBoundingClientRect();
+            const x = Math.max(0, Math.min(event.clientX - rect.left, rect.width));
+            const percent = Math.max(0, Math.min((x / rect.width) * 100, 100));
+            setSliderPosition(percent);
+          };
+
+          const handleTouchMove = (event) => {
+            if (!containerRef.current) return;
+            const rect = containerRef.current.getBoundingClientRect();
+            const x = Math.max(0, Math.min(event.touches[0].clientX - rect.left, rect.width));
+            const percent = Math.max(0, Math.min((x / rect.width) * 100, 100));
+            setSliderPosition(percent);
+          };
+
+          return (
+            <div className="w-full h-64 relative rounded-xl overflow-hidden cursor-ew-resize select-none border border-white/10 group"
+                 ref={containerRef}
+                 onMouseMove={handleMove}
+                 onTouchMove={handleTouchMove}
+            >
+              {/* Background (After - AI Result) */}
+              <div className="absolute inset-0 bg-neutral-900">
+                {afterImage ? (
+                  <img src={afterImage} alt="After" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-pink-600 to-purple-900 flex items-center justify-center">
+                    <div className="text-center px-4">
+                      <ImageIcon className="w-12 h-12 text-white/50 mx-auto mb-2" />
+                      <span className="text-white font-bold text-xl drop-shadow-md">High Fidelity AI Output</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Foreground (Before - Sketch/Draft) - Clipped */}
+              <div 
+                className="absolute inset-0 bg-neutral-900 border-r-2 border-white"
+                style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
+              >
+                {beforeImage ? (
+                  <img src={beforeImage} alt="Before" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-neutral-950">
+                    <div className="text-center px-4">
+                      <div className="w-20 h-20 border-2 border-dashed border-white/30 rounded-full mx-auto mb-2 flex items-center justify-center">
+                          <span className="text-xs text-white/40">Sketch</span>
+                      </div>
+                      <span className="text-white/60 font-mono text-lg">Rough Sketch Input</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Slider Handle */}
+              <div 
+                className="absolute top-0 bottom-0 w-1 bg-white cursor-ew-resize shadow-[0_0_20px_rgba(255,255,255,0.5)] z-10"
+                style={{ left: `${sliderPosition}%` }}
+              >
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg text-black">
+                  <Layers size={16} />
+                </div>
+              </div>
+
+              {/* Labels */}
+              <div className="absolute top-4 left-4 bg-black/60 px-2 py-1 rounded text-xs text-white font-mono border border-white/20">
+                Input
+              </div>
+              <div className="absolute top-4 right-4 bg-pink-600/80 px-2 py-1 rounded text-xs text-white font-mono border border-white/20">
+                AI Output
+              </div>
+            </div>
+          );
+        };
+
+        const Expertise = () => {
+          const areas = [
+            {
+              title: "R&D Leadership",
+              icon: <Lightbulb size={24} className="text-yellow-400" />,
+              desc: "Leading research and integration of multimodal AI tools (Art, Narrative, Audio) into live production environments."
+            },
+            {
+              title: "Pipeline Architecture",
+              icon: <Workflow size={24} className="text-cyan-400" />,
+              desc: "Designing automated workflows that drastically reduce production time & cost during conception and iteration stages."
+            },
+            {
+              title: "Rapid Prototyping",
+              icon: <Rocket size={24} className="text-pink-500" />,
+              desc: "Spearheading the creation of previs videos, prototype assets, and experimental gameplay features via AI methods."
+            },
+            {
+              title: "Team Enablement",
+              icon: <Users size={24} className="text-green-500" />,
+              desc: "Leading cross-functional teams to adopt AI-assisted workflows, expanding creative capacity and accelerating iteration."
+            }
+          ];
+
+          return (
+            <section className="py-12 border-y border-white/5 bg-neutral-900/30">
+              <div className="max-w-7xl mx-auto px-6">
+                <div className="text-center mb-10">
+                  <h2 className="text-2xl font-bold text-white">Core Expertise</h2>
+                  <p className="text-neutral-500 text-sm mt-2">Strategic implementation of AI across the development lifecycle.</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {areas.map((area, idx) => (
+                    <div key={idx} className="p-6 bg-black/40 border border-white/5 rounded-xl hover:bg-white/5 transition-colors group">
+                      <div className="mb-4 bg-white/5 w-12 h-12 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                        {area.icon}
+                      </div>
+                      <h3 className="text-white font-bold mb-2">{area.title}</h3>
+                      <p className="text-sm text-neutral-400 leading-relaxed">{area.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          );
+        };
+
+        const TechStack = () => {
+          const stacks = [
+            {
+              category: "Visual & 3D Gen",
+              icon: <Wand2 size={20} className="text-pink-500" />,
+              tools: ["Stable Diffusion (A1111/Forge)", "ComfyUI Workflows", "Midjourney V6", "ControlNet & IP-Adapter", "LoRA Training (Kohya)", "CSM.ai / TripoSR (3D)"]
+            },
+            {
+              category: "Audio, Video & Narrative",
+              icon: <Music size={20} className="text-purple-500" />,
+              tools: ["ElevenLabs / RVC (Voice)", "Suno / Udio (Music)", "Runway Gen-2/3 (Video)", "Pika Labs", "Inworld AI (Narrative)", "Charisma.ai"]
+            },
+            {
+              category: "Dev & Integration",
+              icon: <Terminal size={20} className="text-cyan-500" />,
+              tools: ["Python Automation", "Unreal Engine 5 (PCG/C++)", "Unity (C#)", "GitHub Copilot", "Cursor IDE", "OpenAI / Claude API"]
+            },
+            {
+              category: "Strategy & Ops",
+              icon: <LayoutTemplate size={20} className="text-green-500" />,
+              tools: ["Jira / Linear", "Notion AI Systems", "Agile Leadership", "Copyright Compliance", "Change Management", "Team Training"]
+            }
+          ];
+
+          return (
+            <section id="stack" className="py-20 px-6 border-b border-white/5 bg-neutral-900/50">
+              <div className="max-w-7xl mx-auto">
+                <div className="mb-12">
+                  <h2 className="text-3xl font-bold text-white mb-4 flex items-center gap-3">
+                    <Database className="text-neutral-500" /> 
+                    The Tech Stack
+                  </h2>
+                  <p className="text-neutral-400 max-w-2xl">
+                    My production workflows are built on a robust ecosystem of cutting-edge tools. 
+                    I select the right tool for the specific creative challenge.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {stacks.map((stack, idx) => (
+                    <div key={idx} className="bg-black border border-white/10 p-6 rounded-xl hover:border-white/20 transition-colors">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2 bg-white/5 rounded-lg">{stack.icon}</div>
+                        <h3 className="font-bold text-white">{stack.category}</h3>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {stack.tools.map((tool) => (
+                          <span key={tool} className="px-3 py-1 bg-neutral-900 text-neutral-300 text-xs font-mono border border-white/5 rounded hover:text-white hover:border-white/20 transition-colors cursor-default">
+                            {tool}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          );
+        };
+
+        const AudioPlayer = () => {
+          const [playing, setPlaying] = useState(false);
+          const [lang, setLang] = useState('EN');
+
+          return (
+            <div className="bg-neutral-900 p-4 rounded-xl border border-white/10">
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex gap-2">
+                  {['EN', 'JP', 'CN'].map(l => (
+                    <button 
+                      key={l}
+                      onClick={() => setLang(l)}
+                      className={`px-3 py-1 text-xs font-bold rounded transition-colors ${lang === l ? 'bg-green-500 text-black' : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+                <div className="text-xs text-green-400 font-mono flex items-center gap-1">
+                  <Zap size={12} /> AI Generated
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => setPlaying(!playing)}
+                  className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-transform"
+                >
+                  {playing ? <Pause size={18} /> : <Play size={18} fill="currentColor" />}
+                </button>
+                <div className="flex-1 h-8 flex items-center gap-1">
+                  {[...Array(20)].map((_, i) => (
+                    <div 
+                      key={i} 
+                      className={`w-1 rounded-full transition-all duration-300 ${playing ? 'bg-green-500' : 'bg-neutral-700'}`}
+                      style={{ 
+                        height: playing ? `${Math.random() * 100}%` : '20%',
+                        animation: playing ? `pulse 0.5s infinite ${i * 0.05}s` : 'none'
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const PipelineFlow = ({ steps }) => (
+          <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-neutral-400 my-4 bg-black/20 p-3 rounded-lg border border-white/5">
+            {steps.map((step, idx) => (
+              <React.Fragment key={idx}>
+                <span className={`${idx === steps.length - 1 ? 'text-white font-bold' : ''}`}>
+                  {step}
+                </span>
+                {idx < steps.length - 1 && <ArrowRight size={12} className="text-neutral-600" />}
+              </React.Fragment>
+            ))}
+          </div>
+        );
+
+        const CaseCard = ({ title, category, description, impact, tools, pipeline, visualType, colorClass, beforeImage, afterImage }) => {
+          return (
+            <div className="group relative bg-neutral-900/50 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden hover:border-white/30 transition-all duration-300 flex flex-col h-full">
+              <div className={`absolute top-0 left-0 w-1 h-full ${colorClass} opacity-50 group-hover:opacity-100 transition-opacity`}></div>
+              
+              <div className="p-1">
+                {visualType === 'slider' && <CompareSlider beforeImage={beforeImage} afterImage={afterImage} />}
+                {visualType === 'grid' && (
+                  <div className="h-48 bg-neutral-950 rounded-xl p-4 grid grid-cols-6 gap-2 content-center opacity-80 group-hover:opacity-100 transition-opacity">
+                    {[...Array(18)].map((_, i) => (
+                      <div key={i} className={`rounded-md aspect-square ${i % 2 === 0 ? 'bg-gradient-to-br from-cyan-900 to-blue-900' : 'bg-gradient-to-br from-purple-900 to-pink-900'}`}></div>
+                    ))}
+                  </div>
+                )}
+                {visualType === 'audio' && <div className="h-32 flex items-center justify-center px-4"><div className="w-full"><AudioPlayer /></div></div>}
+                {visualType === 'chat' && (
+                  <div className="h-48 bg-neutral-950 p-4 font-mono text-xs flex flex-col gap-2 rounded-xl border border-white/5 relative overflow-hidden">
+                     <div className="bg-neutral-800 p-2 rounded-lg rounded-tl-none self-start max-w-[80%] text-neutral-300">Hello traveler, heard any rumors?</div>
+                     <div className={`bg-opacity-20 p-2 rounded-lg rounded-tr-none self-end max-w-[80%] text-white ${colorClass.replace('bg-', 'bg-')}`}>
+                        The northern pass is frozen. The ice giants are waking up... 
+                     </div>
+                     <div className="absolute bottom-2 left-4 text-neutral-600 flex items-center gap-1"><Cpu size={10}/> Dynamic Response</div>
+                  </div>
+                )}
+                {visualType === 'code' && (
+                   <div className="h-48 bg-[#0d1117] p-4 font-mono text-xs text-neutral-400 rounded-xl border border-white/5 flex flex-col justify-center">
+                     <div className="text-purple-400">function <span className="text-blue-400">generatePrototype</span>() {'{'}</div>
+                     <div className="pl-4 text-green-400">// AI generated logic</div>
+                     <div className="pl-4">spawnEnemies(<span className="text-orange-400">rate</span>);</div>
+                     <div className="pl-4">checkCollision();</div>
+                     <div className="text-purple-400">{'}'}</div>
+                     <div className="mt-2 flex items-center gap-2 text-white"><Play size={12} fill="white"/> Running Simulation...</div>
+                   </div>
+                )}
+                {visualType === 'marketing' && (
+                   <div className="h-48 bg-neutral-950 relative overflow-hidden rounded-xl group-hover:scale-[1.02] transition-transform">
+                      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1614728853913-1e221b8c0d27?q=80&w=800&auto=format&fit=crop')] bg-cover bg-center opacity-50 blur-sm group-hover:blur-0 transition-all duration-700"></div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                         <Maximize2 className="text-white drop-shadow-lg animate-pulse" size={32} />
+                      </div>
+                      <div className="absolute bottom-2 right-2 bg-yellow-500 text-black text-xs font-bold px-2 py-1 rounded">4K Upscaled</div>
+                   </div>
+                )}
+                 {visualType === 'video_sim' && (
+                   <div className="h-48 bg-neutral-800 relative overflow-hidden rounded-xl flex items-center justify-center">
+                      <div className="absolute inset-0 bg-gradient-to-t from-blue-900/40 to-transparent"></div>
+                      <div className="text-center">
+                         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full border-2 border-white/30 mb-2">
+                            <Play size={20} fill="white" className="ml-1 text-white"/>
+                         </div>
+                         <div className="text-xs text-neutral-400">AI Motion Capture Preview</div>
+                      </div>
+                   </div>
+                )}
+              </div>
+
+              <div className="p-6 flex flex-col flex-1">
+                <div className="flex justify-between items-start mb-2">
+                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded border ${colorClass.replace('bg-', 'border-').replace('text-', 'text-')} bg-transparent opacity-80`}>
+                    {category}
+                  </span>
+                </div>
+                
+                <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
+                <p className="text-neutral-400 text-sm leading-relaxed mb-4">{description}</p>
+                
+                <div className="mt-auto">
+                  <div className="mb-2">
+                     <span className="text-xs text-neutral-500 uppercase tracking-wide">The Pipeline</span>
+                     <PipelineFlow steps={pipeline} />
+                  </div>
+                  
+                  <div className="flex items-start gap-2 pt-4 border-t border-white/10">
+                    <TrendingUp className={`w-4 h-4 mt-1 ${colorClass.replace('bg-', 'text-')}`} />
+                    <p className="text-sm font-medium text-white/90 italic">{impact}</p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {tools.map(tool => (
+                      <span key={tool} className="text-[10px] bg-neutral-800 text-neutral-300 px-2 py-1 rounded hover:bg-neutral-700 transition-colors">
+                        {tool}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const Portfolio = () => {
+          const [activeTab, setActiveTab] = useState('All');
+
+          const categories = ['Visuals', 'Animation', 'Audio', 'Ops'];
+
+          const cases = [
+            // Visual Arts
+            {
+              id: 1,
+              category: 'Visuals',
+              title: 'Infinite Character Variations',
+              description: 'Solving the "content treadmill" problem for gacha games. Generating high-fidelity character art from simple sketches while maintaining strict art direction.',
+              pipeline: ['Sketch', 'ControlNet', 'Stable Diffusion', 'Polish'],
+              impact: 'Reduced low-tier character production from 3 days to 4 hours per unit.',
+              tools: ['Stable Diffusion', 'ControlNet', 'LoRA'],
+              visualType: 'slider',
+              colorClass: 'bg-pink-500',
+              // CHANGE THESE URLS TO YOUR OWN IMAGES:
+              beforeImage: "https://images.unsplash.com/photo-1544511916-0148ccdeb877?w=800&q=80", 
+              afterImage: "https://images.unsplash.com/photo-1620648378507-dad43dd7d1b8?w=800&q=80"
+            },
+            {
+              id: 2,
+              category: 'Visuals',
+              title: 'UI Iconography System',
+              description: 'Batch generating consistent skill icons for RPG prototyping. Creating a unified visual language instantly for MVP testing.',
+              pipeline: ['Midjourney', 'Vectorizer.ai', 'Unity Atlas'],
+              impact: 'Generated 100+ style-matched icons in one afternoon.',
+              tools: ['Midjourney', 'Illustrator', 'Unity'],
+              visualType: 'grid',
+              colorClass: 'bg-pink-500'
+            },
+            // Animation
+            {
+              id: 5,
+              category: 'Animation',
+              title: 'AI Motion Capture',
+              description: 'Bypassing expensive suits. Using QuickMagic for rapid single-camera capture and retargeting to UE5 Metahumans for AAA quality.',
+              pipeline: ['Phone Video', 'QuickMagic', 'Maya/Blender', 'Unreal 5'],
+              impact: 'Captured complex animations including finger tracking at zero hardware cost.',
+              tools: ['QuickMagic', 'Move.ai', 'Unreal Engine 5', 'Metahuman'],
+              visualType: 'video_sim',
+              colorClass: 'bg-cyan-500'
+            },
+            // Audio
+            {
+              id: 7,
+              category: 'Audio',
+              title: 'Automated Localization',
+              description: 'Generating placeholder and final voiceovers for global SLG launches in multiple languages instantly.',
+              pipeline: ['Script', 'ElevenLabs', 'Wwise'],
+              impact: 'Produced 500+ voice lines in 3 languages in under 48 hours.',
+              tools: ['ElevenLabs', 'Wwise', 'Excel'],
+              visualType: 'audio',
+              colorClass: 'bg-green-500'
+            },
+            // Ops
+            {
+              id: 10,
+              category: 'Ops',
+              title: 'Rapid Gameplay Prototyping',
+              description: 'Validating game mechanics without waiting for engineering resources by using AI for script generation.',
+              pipeline: ['Idea', 'Claude 3.5', 'C# Script', 'Play'],
+              impact: 'Validated core gameplay loop in 2 hours independently.',
+              tools: ['Claude 3.5', 'Cursor', 'Unity'],
+              visualType: 'code',
+              colorClass: 'bg-yellow-500'
+            },
+            // More Visuals
+            {
+              id: 4,
+              category: 'Visuals',
+              title: 'Concept Art to Scene',
+              description: 'Instantly visualizing level designs. Turning text descriptions into panoramic skyboxes and mood concepts for UE5 environments.',
+              pipeline: ['Idea', 'Midjourney', 'Depth Map', 'Unreal 5'],
+              impact: 'Aligned level design and art direction instantly during pre-production.',
+              tools: ['Midjourney', 'Blockade Labs', 'Unreal Engine 5'],
+              visualType: 'marketing', // using image placeholder
+              colorClass: 'bg-pink-500'
+            },
+             // More Audio
+            {
+              id: 8,
+              category: 'Audio',
+              title: 'Dynamic NPC Conversations',
+              description: 'Injecting life into open worlds with non-repetitive, context-aware dialogue generation.',
+              pipeline: ['Persona', 'LLM API', 'Runtime Output'],
+              impact: 'Created infinite dialogue possibilities for ambient NPCs.',
+              tools: ['OpenAI API', 'Inworld AI'],
+              visualType: 'chat',
+              colorClass: 'bg-green-500'
+            },
+             // More Ops
+            {
+              id: 9,
+              category: 'Ops',
+              title: 'Marketing Material Upscaling',
+              description: 'Delivering 4K print-ready assets from 1080p screenshots when the art team is bottlenecked.',
+              pipeline: ['Screenshot', 'Magnific AI', 'Print'],
+              impact: 'Delivered high-res marketing assets independently, unblocking art team.',
+              tools: ['Magnific AI', 'Photoshop'],
+              visualType: 'marketing',
+              colorClass: 'bg-yellow-500'
+            },
+          ];
+
+          const filteredCases = activeTab === 'All' ? cases : cases.filter(c => c.category === activeTab);
+
+          return (
+            <div className="min-h-screen bg-[#050505] text-neutral-200 font-sans selection:bg-pink-500 selection:text-white overflow-x-hidden">
+              
+              {/* Navbar */}
+              <nav className="fixed top-0 w-full z-50 bg-black/80 backdrop-blur-md border-b border-white/5">
+                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+                  <div className="font-bold text-xl tracking-tighter text-white flex items-center gap-2">
+                    <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-purple-600 rounded-lg flex items-center justify-center">
+                      <Zap size={18} className="text-white" />
+                    </div>
+                    AI+ <span className="text-neutral-500">GAME</span>
+                  </div>
+                  <div className="hidden md:flex gap-8 text-sm font-medium text-neutral-400">
+                    <a href="#work" className="hover:text-white transition-colors">Work</a>
+                    <a href="#stack" className="hover:text-white transition-colors text-pink-500 font-bold">Stack</a>
+                    <a href="#philosophy" className="hover:text-white transition-colors">Philosophy</a>
+                    <a href="#contact" className="hover:text-white transition-colors">Contact</a>
+                  </div>
+                  <button className="bg-white text-black px-4 py-2 rounded-full text-xs font-bold hover:bg-neutral-200 transition-colors">
+                    Download CV
+                  </button>
+                </div>
+              </nav>
+
+              {/* Hero Section */}
+              <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-6 overflow-hidden">
+                {/* Abstract Background Elements */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-purple-900/20 rounded-full blur-[120px] pointer-events-none"></div>
+                <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-blue-900/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+                <div className="max-w-4xl mx-auto text-center relative z-10">
+                  <div className="inline-block mb-4 px-3 py-1 rounded-full border border-white/10 bg-white/5 backdrop-blur-md text-xs font-mono text-pink-400 animate-fade-in">
+                     Senior Game Producer | AI Pipeline Architect
+                  </div>
+                  <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter text-white mb-6 leading-[0.9]">
+                    BRIDGING <br/>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 animate-gradient-x">GAMEPLAY & AI</span>
+                  </h1>
+                  <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+                    I don't just use tools; I build <strong>ecosystems</strong> that empower teams to create immersive worlds faster. 
+                    Turning "What If" into "Playable" at AI speed.
+                  </p>
+                  <div className="flex flex-col md:flex-row justify-center gap-4">
+                    <button className="px-8 py-4 bg-white text-black font-bold rounded-lg hover:scale-105 transition-transform flex items-center justify-center gap-2">
+                      View My Workflows <ArrowRight size={18} />
+                    </button>
+                    <button className="px-8 py-4 bg-transparent border border-white/20 text-white font-bold rounded-lg hover:bg-white/5 transition-colors">
+                      Read My Philosophy
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              {/* Core Expertise */}
+              <Expertise />
+
+              {/* Tech Stack Section */}
+              <TechStack />
+
+              {/* Portfolio Section */}
+              <section id="work" className="py-20 px-6 max-w-7xl mx-auto">
+                <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+                  <div>
+                    <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">The Work</h2>
+                    <p className="text-neutral-400 max-w-md">
+                      Selected use cases demonstrating cost reduction, speed enhancement, and creative unlocking.
+                    </p>
+                  </div>
+                  
+                  {/* Filters */}
+                  <div className="flex flex-wrap gap-2">
+                    <button 
+                      onClick={() => setActiveTab('All')}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${activeTab === 'All' ? 'bg-white text-black' : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
+                    >
+                      All
+                    </button>
+                    {categories.map(cat => (
+                      <button 
+                        key={cat}
+                        onClick={() => setActiveTab(cat)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${activeTab === cat ? 'bg-white text-black' : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredCases.map((item) => (
+                    <div key={item.id} className="h-full">
+                      <CaseCard {...item} />
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Genre Versatility Section */}
+              <section className="py-20 px-6 bg-gradient-to-b from-neutral-900 to-black">
+                <div className="max-w-7xl mx-auto">
+                  <div className="text-center mb-16">
+                    <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Genre Versatility</h2>
+                    <p className="text-neutral-400">Adaptable workflows for any art style.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-1">
+                    {/* Anime */}
+                    <div className="group relative h-80 overflow-hidden bg-[#1a0b1a] border-r border-white/5">
+                      <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,0,255,0.05)_50%,transparent_75%)] bg-[length:250%_250%] animate-shine" />
+                      <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center transition-transform group-hover:-translate-y-2">
+                        <div className="w-16 h-16 mb-6 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 blur-xl opacity-40 group-hover:opacity-60 transition-opacity"></div>
+                        <h3 className="text-2xl font-black text-white italic tracking-tighter mb-2">ANIME / CYBERPUNK</h3>
+                        <p className="text-sm text-pink-400 font-mono mb-4">ControlNet Pose + Cel Shader</p>
+                        <p className="text-neutral-500 text-sm">Consistent character training for LiveOps.</p>
+                      </div>
+                    </div>
+
+                    {/* Realistic */}
+                    <div className="group relative h-80 overflow-hidden bg-[#0a0a0a] border-r border-white/5">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center transition-transform group-hover:-translate-y-2">
+                        <div className="w-16 h-16 mb-6 rounded-full bg-gradient-to-br from-orange-900 to-red-900 blur-xl opacity-40 group-hover:opacity-60 transition-opacity"></div>
+                        <h3 className="text-2xl font-black text-white tracking-widest uppercase mb-2">Dark Fantasy</h3>
+                        <p className="text-sm text-red-500 font-mono mb-4">PBR Textures + Atmosphere</p>
+                        <p className="text-neutral-500 text-sm">Dense environment generation at scale.</p>
+                      </div>
+                    </div>
+
+                    {/* Casual */}
+                    <div className="group relative h-80 overflow-hidden bg-[#051a1a]">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center transition-transform group-hover:-translate-y-2">
+                        <div className="w-16 h-16 mb-6 rounded-full bg-gradient-to-br from-yellow-400 to-green-400 blur-xl opacity-40 group-hover:opacity-60 transition-opacity"></div>
+                        <h3 className="text-2xl font-black text-white mb-2">CASUAL / LOW POLY</h3>
+                        <p className="text-sm text-yellow-400 font-mono mb-4">Vector Assets + Rapid Iteration</p>
+                        <p className="text-neutral-500 text-sm">High volume UI & item generation.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Quote Section */}
+              <section id="philosophy" className="py-24 px-6 text-center">
+                <div className="max-w-3xl mx-auto">
+                  <p className="text-2xl md:text-4xl font-serif italic text-white/80 leading-relaxed mb-8">
+                    "AI isn't about replacing artists; it's about removing the <span className="text-pink-500 border-b-2 border-pink-500">friction</span> between imagination and execution."
+                  </p>
+                  <div className="flex items-center justify-center gap-4">
+                     <div className="h-[1px] w-12 bg-white/20"></div>
+                     <span className="text-sm font-mono text-neutral-500">MY PHILOSOPHY</span>
+                     <div className="h-[1px] w-12 bg-white/20"></div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Footer */}
+              <footer id="contact" className="py-12 border-t border-white/10 bg-black">
+                <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+                  <div className="text-left">
+                    <h4 className="text-white font-bold text-lg mb-1">Let's Build the Future</h4>
+                    <p className="text-neutral-500 text-sm">Open for Senior Producer / AI Product Lead roles.</p>
+                  </div>
+                  
+                  <div className="flex gap-6">
+                     <a href="#" className="p-3 bg-white/5 rounded-full hover:bg-white/20 hover:text-white text-neutral-400 transition-all">
+                        <Linkedin size={20} />
+                     </a>
+                     <a href="#" className="p-3 bg-white/5 rounded-full hover:bg-white/20 hover:text-white text-neutral-400 transition-all">
+                        <Github size={20} />
+                     </a>
+                     <a href="#" className="p-3 bg-white/5 rounded-full hover:bg-white/20 hover:text-white text-neutral-400 transition-all">
+                        <Mail size={20} />
+                     </a>
+                  </div>
+                </div>
+                <div className="mt-12 text-center text-xs text-neutral-700">
+                   © 2024 AI-Native Game Producer. Designed with React & Tailwind.
+                </div>
+              </footer>
+            </div>
+          );
+        }
+        
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<Portfolio />);
+    </script>
+</body>
+</html>
