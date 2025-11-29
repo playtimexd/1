@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Andrew Zhang AI+ Game Portfolio</title>
+    
+    <!-- 1. Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- 3. Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- 4. Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <style>
+        :root { --bg-color: #050505; --card-bg: #111; --text-white: #ffffff; --text-gray: #a3a3a3; --accent-pink: #ec4899; }
+        html { scroll-behavior: smooth; }
+        body { background-color: var(--bg-color); color: #e5e5e5; font-family: system-ui, -apple-system, sans-serif; margin: 0; line-height: 1.5; overflow-x: hidden; }
+        .container-padding { padding-left: 2rem; padding-right: 2rem; max-width: 1400px; margin: 0 auto; }
+        @media (min-width: 768px) { .container-padding { padding-left: 4rem; padding-right: 4rem; } }
+        @keyframes fade-in { 0% { opacity: 0; } 100% { opacity: 1; } }
+        .animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
+        @keyframes slide-up { 0% { opacity: 0; transform: translateY(50px); } 100% { opacity: 1; transform: translateY(0); } }
+        .animate-slide-up { animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        .glass-panel { background: rgba(17, 17, 17, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+
+        // --- Icons ---
+        const Icon = ({ path, size = 20, className = "", fill = "none", ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+                {path}
+            </svg>
+        );
+        const Zap = (p) => <Icon {...p} path={<><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></>} />;
+        const Users = (p) => <Icon {...p} path={<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>} />;
+        const Globe = (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></>} />;
+        const MapIcon = (p) => <Icon {...p} path={<><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></>} />;
+        const FileText = (p) => <Icon {...p} path={<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>} />;
+        const Music = (p) => <Icon {...p} path={<><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></>} />;
+        const Film = (p) => <Icon {...p} path={<><rect width="20" height="20" x="2" y="2" rx="2.18" ry="2.18"/><line x1="7" x2="7" y1="2" y2="22"/><line x1="17" x2="17" y1="2" y2="22"/><line x1="2" x2="22" y1="12" y2="12"/><line x1="2" x2="7" y1="7" y2="7"/><line x1="2" x2="7" y1="17" y2="17"/><line x1="17" x2="22" y1="17" y2="17"/><line x1="17" x2="22" y1="7" y2="7"/></>} />;
+        const Terminal = (p) => <Icon {...p} path={<><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></>} />;
+        const Rocket = (p) => <Icon {...p} path={<><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></>} />;
+        const Layers = (p) => <Icon {...p} path={<><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></>} />;
+        const Box = (p) => <Icon {...p} path={<><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></>} />;
+        const Lightbulb = (p) => <Icon {...p} path={<><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2.4 1.5-3.8 0-3.2-2.8-5.7-6-5.7s-6 2.5-6 5.7c0 1.4.5 2.8 1.5 3.8.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></>} />;
+        const Workflow = (p) => <Icon {...p} path={<><rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/></>} />;
+        const ArrowLeft = (p) => <Icon {...p} path={<><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></>} />;
+        const ArrowRight = (p) => <Icon {...p} path={<><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></>} />;
+        const X = (p) => <Icon {...p} path={<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>} />;
+        const Menu = (p) => <Icon {...p} path={<><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></>} />;
+        const Target = (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></>} />;
+        const Clock = (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>} />;
+        const User = (p) => <Icon {...p} path={<><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>} />;
+        const TrendingUp = (p) => <Icon {...p} path={<><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></>} />;
+        const MessageSquare = (p) => <Icon {...p} path={<><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></>} />;
+        const CheckCircle = (p) => <Icon {...p} path={<><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>} />;
+        const Skull = (p) => <Icon {...p} path={<><path d="m12.5 17-.5-1-.5 1h1z"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2"/><path d="M12.5 17h6a8 8 0 0 0-13 0h6.5z"/></>} />;
+        const LayoutTemplate = (p) => <Icon {...p} path={<><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="9" x2="9" y1="9" y2="21"/></>} />;
+        const Palette = (p) => <Icon {...p} path={<><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></>} />;
+        const RotateCw = (p) => <Icon {...p} path={<><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></>} />;
+        const Settings = (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></>} />;
+        const Linkedin = (p) => <Icon {...p} path={<><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></>} />;
+        const Github = (p) => <Icon {...p} path={<><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></>} />;
+        const Mail = (p) => <Icon {...p} path={<><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></>} />;
+        const Cpu = (p) => <Icon {...p} path={<><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></>} />;
+        const Gamepad2 = (p) => <Icon {...p} path={<><line x1="6" x2="10" y1="12" y2="12"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="15" x2="15.01" y1="13" y2="13"/><line x1="18" x2="18.01" y1="11" y2="11"/><rect width="20" height="12" x="2" y="6" rx="2"/></>} />;
+        const Database = (p) => <Icon {...p} path={<><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></>} />;
+        const Wand2 = (p) => <Icon {...p} path={<><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/></>} />;
+        const ImageIcon = (p) => <Icon {...p} path={<><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></>} />;
+        const Maximize2 = (p) => <Icon {...p} path={<><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" x2="14" y1="3" y2="10"/><line x1="3" x2="10" y1="21" y2="14"/></>} />;
+
+        // --- Tech Background (3D Floating Game Assets) ---
+        const TechBackground = () => {
+            const mountRef = useRef(null);
+            
+            useEffect(() => {
+                if (typeof THREE === 'undefined') return;
+                
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                const scene = new THREE.Scene();
+                scene.fog = new THREE.FogExp2(0x050505, 0.003);
+
+                const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+                camera.position.z = 50;
+                
+                const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                renderer.setSize(width, height);
+                renderer.setPixelRatio(window.devicePixelRatio);
+                if (mountRef.current) mountRef.current.appendChild(renderer.domElement);
+                
+                // 1. Neural Network Particles
+                const particleCount = 150; 
+                const particlesGeometry = new THREE.BufferGeometry();
+                const particlePositions = new Float32Array(particleCount * 3);
+                const particleVelocities = [];
+
+                for(let i = 0; i < particleCount; i++) {
+                    particlePositions[i * 3] = (Math.random() - 0.5) * 150;
+                    particlePositions[i * 3 + 1] = (Math.random() - 0.5) * 100;
+                    particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 100;
+                    particleVelocities.push({ 
+                        x: (Math.random() - 0.5) * 0.05, 
+                        y: (Math.random() - 0.5) * 0.05, 
+                        z: (Math.random() - 0.5) * 0.05 
+                    });
+                }
+                particlesGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+                const particlesMaterial = new THREE.PointsMaterial({ size: 0.5, color: 0xec4899, transparent: true, opacity: 0.8 });
+                const particleSystem = new THREE.Points(particlesGeometry, particlesMaterial);
+                scene.add(particleSystem);
+
+                const linesMaterial = new THREE.LineBasicMaterial({ color: 0xec4899, transparent: true, opacity: 0.15 });
+                const linesGeometry = new THREE.BufferGeometry();
+                const lines = new THREE.LineSegments(linesGeometry, linesMaterial);
+                scene.add(lines);
+
+                // 2. 3D Game Assets Generation Helpers
+                const createGamepad = (color) => {
+                    const group = new THREE.Group();
+                    const mat = new THREE.MeshBasicMaterial({ color: color, wireframe: true, transparent: true, opacity: 0.15 });
+                    // Body
+                    const body = new THREE.Mesh(new THREE.BoxGeometry(3.5, 2.0, 0.5), mat);
+                    group.add(body);
+                    // Handles
+                    const handleL = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.6, 2.5, 8), mat);
+                    handleL.rotation.z = Math.PI / 3;
+                    handleL.position.set(-2, -0.8, 0);
+                    group.add(handleL);
+                    const handleR = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.6, 2.5, 8), mat);
+                    handleR.rotation.z = -Math.PI / 3;
+                    handleR.position.set(2, -0.8, 0);
+                    group.add(handleR);
+                    // Joysticks
+                    const joyL = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.2, 8), mat);
+                    joyL.rotation.x = Math.PI/2;
+                    joyL.position.set(-0.8, -0.2, 0.3);
+                    group.add(joyL);
+                    const joyR = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.2, 8), mat);
+                    joyR.rotation.x = Math.PI/2;
+                    joyR.position.set(0.8, -0.4, 0.3);
+                    group.add(joyR);
+                    return group;
+                };
+
+                const createSword = (color) => {
+                     const group = new THREE.Group();
+                     const mat = new THREE.MeshBasicMaterial({ color: color, wireframe: true, transparent: true, opacity: 0.15 });
+                     // Blade
+                     const blade = new THREE.Mesh(new THREE.BoxGeometry(0.4, 5, 0.1), mat);
+                     blade.position.y = 1.5;
+                     group.add(blade);
+                     // Guard
+                     const guard = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.3, 0.3), mat);
+                     guard.position.y = -1;
+                     group.add(guard);
+                     // Handle
+                     const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1.5, 6), mat);
+                     handle.position.y = -1.8;
+                     group.add(handle);
+                     return group;
+                };
+
+                const createCartridge = (color) => {
+                     const group = new THREE.Group();
+                     const mat = new THREE.MeshBasicMaterial({ color: color, wireframe: true, transparent: true, opacity: 0.15 });
+                     // Cartridge Body
+                     const body = new THREE.Mesh(new THREE.BoxGeometry(2.5, 3, 0.4), mat);
+                     group.add(body);
+                     // Groove
+                     const groove = new THREE.Mesh(new THREE.BoxGeometry(2, 1.5, 0.45), mat);
+                     groove.position.y = 0.5;
+                     group.add(groove);
+                     return group;
+                };
+
+                const shapes = [];
+                // Create specific game assets
+                const assetFunctions = [createGamepad, createSword, createCartridge];
+                const colors = [0x06b6d4, 0xec4899]; // Cyan, Pink
+
+                for(let i=0; i<6; i++) {
+                    const createFunc = assetFunctions[i % assetFunctions.length];
+                    const color = colors[i % colors.length];
+                    const mesh = createFunc(color);
+                    
+                    mesh.position.set(
+                        (Math.random() - 0.5) * 90,
+                        (Math.random() - 0.5) * 60,
+                        (Math.random() - 0.5) * 40
+                    );
+                    mesh.rotation.z = Math.random() * Math.PI;
+                    
+                    // Store individual rotation speeds
+                    mesh.userData = {
+                        rotSpeedX: (Math.random() - 0.5) * 0.01,
+                        rotSpeedY: (Math.random() - 0.5) * 0.01,
+                        floatSpeed: 0.005 + Math.random() * 0.005,
+                        floatOffset: Math.random() * 100
+                    };
+                    
+                    scene.add(mesh);
+                    shapes.push(mesh);
+                }
+
+                // Interaction
+                let mouseX = 0;
+                let mouseY = 0;
+                
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    
+                    const positions = particleSystem.geometry.attributes.position.array;
+                    
+                    // 1. Update Particles (Neural Net)
+                    for(let i = 0; i < particleCount; i++) {
+                        positions[i*3] += particleVelocities[i].x;
+                        positions[i*3+1] += particleVelocities[i].y;
+                        positions[i*3+2] += particleVelocities[i].z;
+
+                        // Bounds check
+                        if(Math.abs(positions[i*3]) > 80) particleVelocities[i].x *= -1;
+                        if(Math.abs(positions[i*3+1]) > 60) particleVelocities[i].y *= -1;
+                        if(Math.abs(positions[i*3+2]) > 60) particleVelocities[i].z *= -1;
+                        
+                        // Mouse influence
+                        const dx = positions[i*3] - (mouseX * 60);
+                        const dy = positions[i*3+1] - (-mouseY * 40);
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        if(dist < 20) {
+                            const force = (20 - dist) / 20;
+                            positions[i*3] += dx * force * 0.02;
+                            positions[i*3+1] += dy * force * 0.02;
+                        }
+                    }
+                    particleSystem.geometry.attributes.position.needsUpdate = true;
+
+                    // 2. Update Lines
+                    const linePositions = [];
+                    const connectDistance = 18;
+                    for(let i = 0; i < particleCount; i++) {
+                        for(let j = i + 1; j < particleCount; j++) {
+                            const dx = positions[i*3] - positions[j*3];
+                            const dy = positions[i*3+1] - positions[j*3+1];
+                            const dz = positions[i*3+2] - positions[j*3+2];
+                            if (Math.sqrt(dx*dx + dy*dy + dz*dz) < connectDistance) {
+                                linePositions.push(
+                                    positions[i*3], positions[i*3+1], positions[i*3+2],
+                                    positions[j*3], positions[j*3+1], positions[j*3+2]
+                                );
+                            }
+                        }
+                    }
+                    lines.geometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+
+                    // 3. Update Game Assets
+                    shapes.forEach(shape => {
+                        shape.rotation.x += shape.userData.rotSpeedX;
+                        shape.rotation.y += shape.userData.rotSpeedY;
+                        // Floating effect
+                        shape.position.y += Math.sin(Date.now() * 0.001 + shape.userData.floatOffset) * 0.02;
+                    });
+
+                    // Camera Movement
+                    camera.position.x += (mouseX * 20 - camera.position.x) * 0.05;
+                    camera.position.y += (-mouseY * 20 - camera.position.y) * 0.05;
+                    camera.lookAt(scene.position);
+                    
+                    renderer.render(scene, camera);
+                };
+                
+                animate();
+                
+                const handleResize = () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                };
+                const handleMouseMove = (event) => {
+                    mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+                    mouseY = (event.clientY / window.innerHeight) * 2 - 1;
+                };
+                
+                window.addEventListener('resize', handleResize);
+                document.addEventListener('mousemove', handleMouseMove);
+                
+                return () => {
+                    window.removeEventListener('resize', handleResize);
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    if (mountRef.current && renderer.domElement) {
+                        mountRef.current.removeChild(renderer.domElement);
+                    }
+                    particlesGeometry.dispose();
+                    linesGeometry.dispose();
+                    particlesMaterial.dispose();
+                    linesMaterial.dispose();
+                    renderer.dispose();
+                };
+            }, []);
+            return <div ref={mountRef} className="fixed inset-0 z-0 pointer-events-none opacity-60" />;
+        };
+
+        // --- Components ---
+        const ASSETS = {
+              art_concept: "https://images.unsplash.com/photo-1560932669-5e3252f28b20?w=800&q=80",
+              art_env: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&q=80",
+              world_map: "https://images.unsplash.com/photo-1614726365202-b2d97607730e?w=800&q=80",
+              level_layout: "https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=800&q=80",
+              level_heat: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80",
+              audio_wave: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=800&q=80",
+              anim_mocap: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&q=80",
+              code_screen: "https://images.unsplash.com/photo-1555099962-4199c345e5dd?w=800&q=80",
+              ops_dash: "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800&q=80",
+              video_cam: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&q=80",
+              design_flow: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=800&q=80",
+              model_3d: "https://images.unsplash.com/photo-1633412802994-5c058f151b66?w=800&q=80"
+        };
+
+        const ImageDisplay = ({ src, label, aspectRatio = "aspect-video" }) => {
+            return (
+                <div className={`relative block w-full ${aspectRatio} bg-neutral-900 border-2 border-dashed border-white/10 rounded-xl overflow-hidden group shadow-sm`}>
+                    {src ? (
+                        <img src={src} className="w-full h-full object-cover" alt={label} />
+                    ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-neutral-500">
+                            <div className="p-3 bg-white/5 rounded-full mb-3"><ImageIcon size={20} className="opacity-50" /></div>
+                            <span className="text-xs font-mono uppercase tracking-wider text-center px-4">{label}</span>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+        
+        const ScrollingGallery = ({ images }) => {
+          const [lightboxImage, setLightboxImage] = useState(null);
+          return (
+            <>
+                <div className="relative w-full overflow-hidden group h-64 bg-neutral-900 rounded-xl border border-white/10 flex items-center shadow-sm">
+                  <div className="absolute top-4 right-4 z-20 bg-black/60 text-white text-[10px] px-2 py-1 rounded border border-white/10 backdrop-blur-sm pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">Click to Enlarge</div>
+                  <div className="flex gap-4 animate-scroll hover:pause w-max px-4">
+                    {[...images, ...images].map((img, idx) => (
+                      <div key={idx} onClick={() => setLightboxImage(img)} className="w-48 h-48 flex-shrink-0 rounded-lg overflow-hidden border border-white/10 bg-black relative transition-transform hover:scale-105 cursor-pointer group/item shadow-sm">
+                          <img src={img} className="w-full h-full object-cover" alt={`Variant ${idx}`} />
+                          <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 group-hover/item:opacity-100 transition-opacity"><span className="text-[10px] font-mono text-white/90 flex items-center gap-1"><Maximize2 size={10} /> Enlarge</span></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <Lightbox src={lightboxImage} onClose={() => setLightboxImage(null)} />
+            </>
+          )
+        };
+
+        const CompareSlider = ({ beforeImage, afterImage }) => {
+          const [sliderPosition, setSliderPosition] = useState(50);
+          const containerRef = useRef(null);
+          const handleMove = (event) => {
+            if (!containerRef.current) return;
+            const rect = containerRef.current.getBoundingClientRect();
+            const x = Math.max(0, Math.min(event.clientX - rect.left, rect.width));
+            setSliderPosition(Math.max(0, Math.min((x / rect.width) * 100, 100)));
+          };
+          const handleTouchMove = (event) => {
+            if (!containerRef.current) return;
+            const rect = containerRef.current.getBoundingClientRect();
+            const x = Math.max(0, Math.min(event.touches[0].clientX - rect.left, rect.width));
+            setSliderPosition(Math.max(0, Math.min((x / rect.width) * 100, 100)));
+          };
+          return (
+            <div className="w-full h-64 md:h-80 relative rounded-xl overflow-hidden cursor-ew-resize select-none border border-white/10 group bg-neutral-900 shadow-md" ref={containerRef} onMouseMove={handleMove} onTouchMove={handleTouchMove}>
+              <div className="absolute inset-0">{afterImage ? <img src={afterImage} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gradient-to-br from-pink-600 to-purple-900 flex items-center justify-center"><div className="text-center px-4"><ImageIcon className="w-12 h-12 text-white/50 mx-auto mb-2" /><span className="text-white font-bold text-xl drop-shadow-md">AI Output</span></div></div>}</div>
+              <div className="absolute inset-0 border-r-2 border-white bg-neutral-900" style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}>{beforeImage ? <img src={beforeImage} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-neutral-950"><div className="text-center px-4"><div className="w-20 h-20 border-2 border-dashed border-white/30 rounded-full mx-auto mb-2 flex items-center justify-center"><span className="text-xs text-white/40">Input</span></div><span className="text-white/60 font-mono text-lg">Sketch/Ref</span></div></div>}</div>
+              <div className="absolute top-0 bottom-0 w-1 bg-white cursor-ew-resize shadow-[0_0_20px_rgba(255,255,255,0.5)] z-10" style={{ left: `${sliderPosition}%` }}><div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg text-black"><Layers size={16} /></div></div>
+              <div className="absolute top-4 left-4 bg-black/60 px-2 py-1 rounded text-xs text-white font-mono border border-white/20 shadow-sm">Input</div>
+              <div className="absolute top-4 right-4 bg-pink-600/80 px-2 py-1 rounded text-xs text-white font-mono border border-white/20 shadow-sm">AI Output</div>
+            </div>
+          );
+        };
+
+        const ProjectDetail = ({ project, onClose, lang, translations }) => {
+            const t = translations;
+            const [selectedSubItem, setSelectedSubItem] = useState(null); 
+            if (!project) return null;
+
+            if (selectedSubItem) {
+                return (
+                    <div className="fixed inset-0 z-[70] bg-black/95 overflow-y-auto animate-fade-in-down backdrop-blur-sm">
+                        <div className="min-h-screen w-full max-w-5xl mx-auto bg-[#0a0a0a] border-x border-white/10 relative shadow-2xl p-6 md:p-12 text-white">
+                            <button onClick={() => setSelectedSubItem(null)} className="flex items-center gap-2 text-white/70 hover:text-white transition-colors text-sm font-bold uppercase tracking-wide cursor-pointer mb-8"><ArrowLeft size={18} /> {t.back} {project.title}</button>
+                            <div className="mb-12"><div className="flex items-center gap-4 mb-4"><div className="p-3 bg-pink-500/10 rounded-xl text-pink-500">{selectedSubItem.icon}</div><h2 className="text-3xl md:text-4xl font-black text-white">{selectedSubItem.title}</h2></div>
+                            {selectedSubItem.tools && (
+                                <div className="flex flex-wrap gap-2">{selectedSubItem.tools.map(tool => (<span key={tool} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-neutral-300">{tool}</span>))}</div>
+                            )}
+                            </div>
+                            {selectedSubItem.stats && (<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12"><div className="bg-neutral-900 border border-white/5 p-6 rounded-xl flex flex-col justify-between shadow-sm"><h4 className="text-xs font-bold text-neutral-500 uppercase mb-2">{lang === 'en' ? 'Traditional Workflow' : '传统工作流'}</h4><p className="text-2xl font-mono text-neutral-400">{selectedSubItem.stats.traditional}</p><div className="w-full bg-white/10 h-1 mt-4 rounded-full overflow-hidden"><div className="h-full bg-neutral-600 w-3/4"></div></div></div><div className="bg-neutral-900 border border-pink-500/30 p-6 rounded-xl flex flex-col justify-between relative overflow-hidden shadow-sm"><div className="absolute top-0 right-0 p-2 bg-pink-500/20 rounded-bl-xl"><Zap size={16} className="text-pink-400" /></div><h4 className="text-xs font-bold text-pink-400 uppercase mb-2">{lang === 'en' ? 'AI Pipeline' : 'AI 流程'}</h4><p className="text-3xl font-mono text-white font-bold">{selectedSubItem.stats.ai}</p><div className="w-full bg-white/10 h-1 mt-4 rounded-full overflow-hidden"><div className="h-full bg-pink-500 w-full animate-pulse"></div></div></div></div>)}
+                            <div className="space-y-16">
+                                {selectedSubItem.subSteps && selectedSubItem.subSteps.map((step, idx) => {
+                                    const isNewPhase = idx === 0 || (step.phase && step.phase !== selectedSubItem.subSteps[idx-1].phase);
+                                    return (
+                                        <div key={idx}>
+                                            {isNewPhase && (<div className="mb-8 mt-12 pt-6 border-t border-white/5 first:mt-0 first:border-t-0 first:pt-0"><h3 className="text-pink-500 font-black text-2xl">{step.phase}</h3></div>)}
+                                            <div className="relative border-l-2 border-white/10 pl-8 pb-12 last:pb-0"><div className="absolute -left-[9px] top-1.5 w-4 h-4 bg-black border-2 border-neutral-600 rounded-full group-hover:border-pink-500 transition-colors"></div><h4 className="text-lg font-bold text-white mb-2">{step.title}</h4><p className="text-neutral-400 text-sm leading-relaxed whitespace-pre-wrap mb-4">{step.text}</p><div className="mt-4">{step.type === 'gallery' ? (<ScrollingGallery images={step.galleryImages} />) : (<ImageDisplay src={step.image} label={step.imageLabel} aspectRatio={step.aspect || "aspect-video"} />)}</div></div>
+                                        </div>
+                                    );
+                                })}
+                                {selectedSubItem.summary && (<div className="mt-16 bg-gradient-to-br from-neutral-900 to-neutral-950 border border-white/10 p-8 rounded-2xl shadow-sm"><h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3"><Target className="text-pink-500" /> {selectedSubItem.summary.title}</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8"><div><h4 className="text-sm font-bold text-neutral-500 uppercase mb-4 flex items-center gap-2"><Clock size={16} /> {lang === 'en' ? 'Efficiency Shift' : '效率变革'}</h4><div className="space-y-4"><div className="flex justify-between items-center text-sm"><span className="text-neutral-400">{lang === 'en' ? 'Time to Concept' : '概念时间'}</span><div className="flex items-center gap-2"><span className="text-neutral-500 line-through">2 Weeks</span><ArrowRight size={12} className="text-neutral-600" /><span className="text-green-400 font-bold">2 Hours</span></div></div><div className="flex justify-between items-center text-sm"><span className="text-neutral-400">{lang === 'en' ? 'Cost per Asset' : '单资产成本'}</span><div className="flex items-center gap-2"><span className="text-neutral-500 line-through">$800</span><ArrowRight size={12} className="text-neutral-600" /><span className="text-green-400 font-bold">$15</span></div></div></div></div><div><h4 className="text-sm font-bold text-neutral-500 uppercase mb-4 flex items-center gap-2"><Rocket size={16} /> {lang === 'en' ? 'Production Impact' : '生产影响'}</h4><ul className="space-y-2">{selectedSubItem.summary.impacts.map((impact, i) => (<li key={i} className="text-sm text-neutral-300 flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-pink-500 mt-1.5 shrink-0"></div>{impact}</li>))}</ul></div></div></div>)}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="fixed inset-0 z-[60] bg-black/95 overflow-y-auto animate-fade-in-down backdrop-blur-sm fallback-flex fallback-col">
+                    <div className="min-h-screen w-full max-w-6xl mx-auto bg-[#0a0a0a] border-x border-white/10 relative shadow-2xl">
+                        <div className="sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-white/10 px-6 py-4 flex justify-between items-center">
+                            <button onClick={onClose} className="flex items-center gap-2 text-white/70 hover:text-white transition-colors text-sm font-bold uppercase tracking-wide cursor-pointer"><ArrowLeft size={18} /> {translations.back}</button>
+                            <div className="text-xs font-mono text-neutral-500">{project.id}</div>
+                        </div>
+                        <div className="p-6 md:p-12 animate-slide-up">
+                            <div className="mb-10 text-center md:text-left"><span className={`inline-block px-3 py-1 rounded-full border border-white/20 text-xs font-bold uppercase mb-4 text-pink-500`}>{project.category}</span><h1 className="text-3xl md:text-5xl font-black text-white mb-6 leading-tight">{project.title}</h1><p className="text-xl text-neutral-300 leading-relaxed max-w-3xl">{project.description}</p></div>
+                            <div className="mb-8 border border-white/10 rounded-2xl overflow-hidden bg-neutral-900">
+                                <div className="p-4">
+                                    {(project.detailVisualType || project.visualType) === 'slider' ? (
+                                        <CompareSlider beforeImage={project.beforeImage} afterImage={project.afterImage} />
+                                    ) : (project.detailVisualType || project.visualType) === 'image' ? (
+                                        <div className="relative w-full h-96 rounded-xl overflow-hidden group">
+                                            <img src={project.afterImage} alt="AI Output" className="w-full h-full object-cover" />
+                                        </div>
+                                    ) : (
+                                        <div className="h-64 flex items-center justify-center bg-neutral-800 text-neutral-500"><p>Visual Preview Available in Demo</p></div>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            {project.efficiency && (
+                                <div className="mb-16">
+                                    <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                                        <TrendingUp className="text-green-500" /> {project.efficiency.title}
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {project.efficiency.items.map((item, idx) => (
+                                            <div key={idx} className="bg-neutral-900/50 p-4 rounded-xl border border-white/5 flex items-center justify-between">
+                                                <span className="text-neutral-300 font-medium">{item.label}</span>
+                                                <div className="flex items-center gap-3 text-sm">
+                                                    <span className="text-neutral-600 line-through">{item.old}</span>
+                                                    <ArrowRight size={14} className="text-neutral-600" />
+                                                    <span className="text-white font-bold">{item.new}</span>
+                                                    <span className="text-green-400 font-mono text-xs bg-green-500/10 px-2 py-1 rounded ml-2">{item.gain}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {project.subCategories && (
+                                <div className="mb-16">
+                                    <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2"><Layers className="text-pink-500" /> {translations.production_modules}</h3>
+                                    <div className="fallback-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {project.subCategories.map((sub, idx) => (
+                                            <div key={idx} onClick={() => setSelectedSubItem(sub)} className="group bg-neutral-900/50 p-6 rounded-xl border border-white/10 hover:border-pink-500/50 hover:bg-neutral-900 transition-all cursor-pointer h-full flex flex-col">
+                                                <div className="flex justify-between items-start mb-4"><div className="p-2 bg-white/5 rounded-lg text-white group-hover:text-pink-400 transition-colors">{sub.icon || <Layers size={20} />}</div><ArrowRight size={16} className="text-neutral-600 group-hover:text-white transition-colors" /></div>
+                                                <h4 className="text-lg font-bold text-white mb-2">{sub.title}</h4><p className="text-xs text-neutral-400 mb-4 line-clamp-2 flex-grow">{sub.details}</p><div className="pt-3 border-t border-white/5 mt-auto"><p className="text-xs text-green-400 font-medium">✨ {sub.value}</p></div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const TRANSLATIONS = {
+            en: { nav_work: "AI Pipelines", nav_stack: "Stack", nav_about: "About Me", hero_role: "Senior Game Producer", hero_title: "BRIDGING GAME & AI", hero_btn: "View AI Pipelines", back: "Back to", production_modules: "Production Modules", expertise_title: "Core Expertise", expertise_desc: "Strategic implementation of AI across the development lifecycle.", stack_title: "The Tech Stack", stack_desc: "My production workflows are built on a robust ecosystem of cutting-edge tools.", pipeline_title: "AI Pipelines", pipeline_desc: "10 Specialized AI Pipelines.", footer_title: "Let's Build the Future", footer_desc: "Open for Senior Producer / AI Product Lead roles.", back_home: "Back to Home", nav_contact: "Contact" },
+            zh: { nav_work: "AI 生产管线", nav_stack: "技术栈", nav_about: "关于我", hero_role: "资深游戏制作人", hero_title: "连接 游戏与 AI", hero_btn: "查看 AI 管线", back: "返回", production_modules: "生产模块", expertise_title: "核心专长", expertise_desc: "在开发全生命周期中战略性落地 AI。", stack_title: "技术栈", stack_desc: "我的生产工作流建立在强大的前沿工具生态之上。", pipeline_title: "AI 生产管线", pipeline_desc: "10 大专项 AI 生产管线。", footer_title: "共建未来", footer_desc: "寻求资深制作人 / AI 产品负责人职位。", back_home: "返回首页", nav_contact: "联系" }
+        };
+        
+        const Expertise = ({ lang, translations }) => {
+          const areas = [
+            { title: lang==='en'?"R&D Leadership":"研发领导力", icon: <Lightbulb size={24} className="text-yellow-400" />, desc: lang==='en'?"Leading research and integration of multimodal AI tools (Art, Narrative, Audio) into live production environments.":"领导多模态 AI 工具（美术、叙事、音频）在实际生产环境中的研究与整合。" },
+            { title: lang==='en'?"Pipeline Architecture":"管线架构", icon: <Workflow size={24} className="text-cyan-400" />, desc: lang==='en'?"Designing automated workflows that drastically reduce production time & cost during conception and iteration stages.":"设计自动化工作流，大幅降低概念设计和迭代阶段的生产时间和成本。" },
+            { title: lang==='en'?"Rapid Prototyping":"快速原型", icon: <Rocket size={24} className="text-pink-500" />, desc: lang==='en'?"Spearheading the creation of previs videos, prototype assets, and experimental gameplay features via AI methods.":"通过 AI 方法主导预演视频、原型资产和实验性游戏功能的创建。" },
+            { title: lang==='en'?"Team Enablement":"团队赋能", icon: <Users size={24} className="text-green-500" />, desc: lang==='en'?"Leading cross-functional teams to adopt AI-assisted workflows, expanding creative capacity and accelerating iteration.":"带领跨职能团队采用 AI 辅助工作流，扩展创造力并加速迭代。" }
+          ];
+
+          return (
+            <section className="py-12 border-y border-white/5 bg-neutral-900/30 relative z-10">
+              <div className="container-padding">
+                <div className="text-center mb-10">
+                  <h2 className="text-2xl font-bold text-white">{translations.expertise_title}</h2>
+                  <p className="text-neutral-500 text-sm mt-2">{translations.expertise_desc}</p>
+                </div>
+                <div className="fallback-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {areas.map((area, idx) => (
+                    <div key={idx} className="p-6 bg-black/40 border border-white/5 rounded-xl hover:bg-white/5 transition-colors group">
+                      <div className="mb-4 bg-white/5 w-12 h-12 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                        {area.icon}
+                      </div>
+                      <h3 className="text-white font-bold mb-2">{area.title}</h3>
+                      <p className="text-sm text-neutral-400 leading-relaxed">{area.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          );
+        };
+
+        const AboutMeOverlay = ({ onClose, lang, translations }) => {
+            useEffect(() => {
+                const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
+                window.addEventListener('keydown', handleEsc);
+                return () => window.removeEventListener('keydown', handleEsc);
+            }, [onClose]);
+
+            return ReactDOM.createPortal(
+                <div className="fixed inset-0 z-[60] bg-black/60 overflow-y-auto animate-fade-in-down backdrop-blur-sm">
+                    <div className="min-h-screen w-full max-w-5xl mx-auto bg-[#0a0a0a] border-x border-white/10 relative shadow-2xl text-white">
+                        <div className="sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-white/10 px-6 py-4 flex justify-between items-center">
+                            <button onClick={onClose} className="flex items-center gap-2 text-white/70 hover:text-white transition-colors text-sm font-bold uppercase tracking-wide cursor-pointer"><ArrowLeft size={18} /> {translations.back_home}</button>
+                            <div className="text-xs font-mono text-neutral-500">{translations.nav_about.toUpperCase()}</div>
+                        </div>
+                        <div className="p-6 md:p-12 animate-slide-up">
+                            <div className="flex flex-col md:flex-row gap-12 mb-16 items-start">
+                                <div className="w-32 h-32 md:w-48 md:h-48 bg-neutral-900 rounded-full overflow-hidden shrink-0 border-4 border-white/10 shadow-lg">
+                                    <div className="w-full h-full flex items-center justify-center bg-neutral-800 text-neutral-600"><User size={64} /></div>
+                                </div>
+                                <div>
+                                    <h1 className="text-4xl md:text-5xl font-black text-white mb-4">{lang === 'en' ? "Hello, I'm [Your Name]" : "你好，我是 [您的名字]"}</h1>
+                                    <h2 className="text-xl text-pink-500 font-medium mb-6">{translations.hero_role}</h2>
+                                    <p className="text-neutral-400 leading-relaxed text-lg max-w-2xl mb-8">
+                                        {lang === 'en' 
+                                            ? "I am a passionate Game Producer with a focus on leveraging Artificial Intelligence to revolutionize game development workflows. My mission is to bridge the gap between creative vision and technical execution..."
+                                            : "我是一名充满激情的游戏制作人，专注于利用人工智能革新游戏开发工作流。我的使命是弥合创意愿景与技术执行之间的鸿沟..."}
+                                    </p>
+                                    <div className="flex gap-4"><a href="#" className="px-6 py-3 bg-white text-black font-bold rounded-lg hover:bg-neutral-200 transition-colors text-sm">{lang==='en'?"Download Resume":"下载简历"}</a><a href="mailto:your@email.com" className="px-6 py-3 bg-transparent border border-white/20 text-white font-bold rounded-lg hover:bg-white/5 transition-colors text-sm">{translations.nav_contact}</a></div>
+                                </div>
+                            </div>
+                            <div className="mb-16"><h3 className="text-2xl font-bold text-white mb-8 border-b border-white/10 pb-4">{translations.expertise_title}</h3><Expertise lang={lang} translations={translations} /></div>
+                        </div>
+                    </div>
+                </div>, document.body
+            );
+        };
+
+        const TechStack = ({ lang, translations }) => {
+          const stacks = [
+            { category: lang==='en'?"Visual & 3D Gen":"视觉与 3D 生成", icon: <Wand2 size={20} className="text-pink-500" />, tools: ["Stable Diffusion", "Midjourney", "Hunyuan", "ControlNet", "LoRA", "CSM.ai"] },
+            { category: lang==='en'?"Audio, Video & Narrative":"音频、视频与叙事", icon: <Music size={20} className="text-purple-500" />, tools: ["ElevenLabs", "Suno", "Kling", "Runway Gen-2", "Pika", "Inworld AI"] },
+            { category: lang==='en'?"Dev & Integration":"开发与整合", icon: <Terminal size={20} className="text-cyan-500" />, tools: ["Deepseek", "Python", "UE5 (PCG)", "Unity", "Copilot", "Cursor"] },
+            { category: lang==='en'?"Strategy & Ops":"策略与运营", icon: <LayoutTemplate size={20} className="text-green-500" />, tools: ["Jira", "Notion AI", "Agile", "Copyright", "Training"] }
+          ];
+
+          return (
+            <section id="stack" className="py-20 border-b border-white/5 bg-neutral-900/50 relative z-10">
+              <div className="container-padding">
+                <div className="mb-12">
+                  <h2 className="text-3xl font-bold text-white mb-4 flex items-center gap-3">
+                    <Database className="text-neutral-500" /> {translations.stack_title}
+                  </h2>
+                  <p className="text-neutral-400 max-w-2xl">{translations.stack_desc}</p>
+                </div>
+                <div className="fallback-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {stacks.map((stack, idx) => (
+                    <div key={idx} className="bg-black border border-white/10 p-6 rounded-xl hover:border-white/20 transition-colors">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2 bg-white/5 rounded-lg">{stack.icon}</div>
+                        <h3 className="font-bold text-white">{stack.category}</h3>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {stack.tools.map((tool) => (
+                          <span key={tool} className="px-3 py-1 bg-neutral-900 text-neutral-300 text-xs font-mono border border-white/5 rounded">{tool}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          );
+        };
+
+        const CaseCard = ({ title, category, description, impact, visualType, colorClass, beforeImage, afterImage, onClick, lang }) => {
+          const color = colorClass || 'bg-gray-500'; // Fallback color
+          return (
+            <div onClick={onClick} className="group relative bg-neutral-900/50 border border-white/10 rounded-2xl overflow-hidden hover:border-white/30 transition-all duration-300 flex flex-col h-full cursor-pointer hover:-translate-y-1 z-10">
+              <div className={`absolute top-0 left-0 w-1 h-full ${color} opacity-50 group-hover:opacity-100 transition-opacity`}></div>
+              <div className="absolute inset-0 z-10 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                  <span className="text-white font-bold border border-white/50 px-4 py-2 rounded-full flex items-center gap-2 shadow-sm">{lang==='en'?"View Pipeline":"查看流程"} <ArrowRight size={16} /></span>
+              </div>
+              <div className="p-1">
+                {visualType === 'slider' ? (
+                    <CompareSlider beforeImage={beforeImage} afterImage={afterImage} />
+                ) : visualType === 'image' ? (
+                    <div className="relative w-full h-48 md:h-64 rounded-xl overflow-hidden shadow-sm">
+                        <img src={afterImage} alt="AI Output" className="w-full h-full object-cover" />
+                    </div>
+                ) : (
+                   <div className="h-48 bg-neutral-950 flex flex-col items-center justify-center text-neutral-500 rounded-xl"><p className="text-xs">Interactive Preview</p></div>
+                )}
+              </div>
+              <div className="p-6 flex flex-col flex-1">
+                <div className="flex justify-between items-start mb-2"><span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded border border-white/20 text-neutral-300">{category}</span></div>
+                <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
+                <p className="text-neutral-400 text-sm leading-relaxed mb-4">{description}</p>
+                <div className="mt-auto flex items-start gap-2 pt-4 border-t border-white/10"><TrendingUp className={`w-4 h-4 mt-1 ${color.replace('bg-', 'text-')}`} /><p className="text-sm font-medium text-white/90 italic">{impact}</p></div>
+              </div>
+            </div>
+          );
+        };
+
+        const Portfolio = () => {
+            const [lang, setLang] = useState('en');
+            const [selectedProject, setSelectedProject] = useState(null);
+            const [showAbout, setShowAbout] = useState(false);
+            const [activeTab, setActiveTab] = useState('All');
+            const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+            const t = TRANSLATIONS[lang];
+            const categories = ['Art & Audio', 'Design', 'Tech & Ops'];
+
+            // --- DATA DEFINITIONS ---
+            const CASES_EN = [
+                { 
+                    id: 'A', category: 'Art', title: 'AI Art Production', description: 'Comprehensive 2D/3D asset generation pipeline.', visualType: 'slider', colorClass: 'bg-pink-500', beforeImage: "https://images.unsplash.com/photo-1544511916-0148ccdeb877?w=800&q=80", afterImage: "https://images.unsplash.com/photo-1620648378507-dad43dd7d1b8?w=800&q=80",
+                    efficiency: { title: 'Efficiency Gains', items: [{ label: 'Concept', old: '2 Weeks', new: '2 Hours', gain: '50x' }, { label: 'Asset Cost', old: '$800', new: '$15', gain: '98%' }] },
+                    subCategories: [
+                        { title: 'Character System', icon: <Users />, tools: ['Stable Diffusion', 'LoRA', 'ControlNet', 'IP-Adapter'], details: 'Full 6-stage pipeline: Exploration, Style, Detailing, Consistency, Variants, Turnarounds.', subSteps: [{ phase: 'Phase 1', title: 'Multi-variant Gen', text: 'Input prompt to generate 8-20 initial drafts covering body types and themes.', image: ASSETS.art_concept }, { phase: 'Phase 2', title: 'Style Variants', text: 'Rapidly identifying visual direction: Realistic, Anime, Cyberpunk.', image: ASSETS.art_concept }, { phase: 'Phase 3', title: 'Detailing', text: 'AI generation of fabrics, metal inlays, patterns, and accessories.', image: ASSETS.art_concept }, { phase: 'Phase 4', title: 'Identity Lock', text: 'Locking face shape and facial ratios across angles.', image: ASSETS.art_concept }, { phase: 'Phase 5', title: 'Skin Variants', text: 'Generating casual and premium skins for monetization.', image: ASSETS.art_concept }, { phase: 'Phase 6', title: 'Turnaround', text: 'Front, Side, Back views for 3D modeling reference.', image: ASSETS.art_concept }] },
+                        { title: 'Environments', icon: <MapIcon />, tools: ['Midjourney'], details: 'Atmospheric concept art & layouts.', subSteps: [{ phase: 'Phase 1', title: 'Mood Painting', text: 'Generating atmospheric concepts for level mood validation.', image: ASSETS.art_env }, { phase: 'Phase 2', title: 'Layout Draft', text: 'Top-down layout generation for level design.', image: ASSETS.level_layout }] },
+                        { title: 'Prop Design', icon: <Box />, tools: ['Midjourney', 'Stable Diffusion', 'Photoshop AI', 'Rodin'], details: 'Batch generation of items and weapons.', subSteps: [{ phase: 'Phase 1', title: 'Weapon Variants', text: 'Rapid exploration of sword and shield designs.', image: ASSETS.model_3d }, { phase: 'Phase 2', title: 'Material Gen', text: 'Generating textures for props.', image: ASSETS.model_3d }] },
+                        { title: 'Boss System', icon: <Skull />, tools: ['Stable Diffusion', 'ControlNet', 'CSM.ai'], details: 'Creature design and mutation variations.', subSteps: [{ phase: 'Phase 1', title: 'Silhouette', text: 'Rapidly exploring creature silhouettes.', image: ASSETS.art_concept }, { phase: 'Phase 2', title: 'Mutation', text: 'Generating elemental variants.', image: ASSETS.art_concept }] },
+                        { title: 'Animation Ref', icon: <Film />, tools: ['Runway Gen-2', 'Pika', 'Sora'], details: 'Generating movement references.', subSteps: [{ phase: 'Phase 1', title: 'VFX Previs', text: 'Visualizing skill effects via video gen.', image: ASSETS.video_cam }] },
+                        { title: '3D Proxy', icon: <Box />, tools: ['TripoSR', 'CSM.ai', 'Rodin'], details: '2D to 3D conversion for blockout.', subSteps: [{ phase: 'Phase 1', title: 'Mesh Gen', text: 'Converting side-views to OBJ meshes.', image: ASSETS.model_3d }] }
+                    ]
+                },
+                { 
+                    id: 'B', category: 'Design', title: 'AI Narrative', description: 'Automated worldbuilding and dialogue systems.', visualType: 'image', colorClass: 'bg-blue-500', afterImage: ASSETS.world_map,
+                    efficiency: { title: 'Efficiency Gains', items: [{ label: 'Worldbuilding', old: '4 Weeks', new: '1 Day', gain: '20x' }, { label: 'Dialogue', old: 'Manual', new: 'Auto-Gen', gain: '∞' }] },
+                    subCategories: [
+                        { title: '0. Pain Points & Solution', icon: <Target />, tools: [], details: 'Solving fragmentation and inconsistency.', subSteps: [{ phase: 'Problem', title: 'Fragmentation', text: 'Traditional narrative design is slow and fragmented. AI unifies worldbuilding.', image: ASSETS.world_map }] },
+                        { title: 'Worldbuilding', icon: <Globe />, tools: ['GPT-4', 'Claude', 'World Anvil AI'], details: 'Auto-generation of geography and factions.', subSteps: [{ phase: 'Concept', title: 'World Gen', text: 'Defining "Yang" vs "Shadow" realms.', image: ASSETS.world_map }, { phase: 'Factions', title: 'Conflict Map', text: 'Generating political relationships between sects.', image: ASSETS.world_map }] },
+                        { title: 'Character Lore', icon: <User />, tools: ['GPT-4', 'Character.ai'], details: 'Generating backstories and relationships.', subSteps: [{ phase: 'Design', title: 'Bio Gen', text: 'Creating deep character histories.', image: ASSETS.art_concept }, { phase: 'Relations', title: 'Graph', text: 'Mapping NPC relationship networks.', image: ASSETS.art_concept }] },
+                        { title: 'Quest Gen', icon: <Workflow />, tools: ['Claude', 'Twine', 'Ink'], details: 'Main and side quest structures.', subSteps: [{ phase: 'Structure', title: 'Branching', text: 'Designing multi-ending quest lines.', image: ASSETS.design_flow }] },
+                        { title: 'Dialogue', icon: <MessageSquare />, tools: ['Inworld AI', 'GPT-4'], details: 'NPC interaction and choices.', subSteps: [{ phase: 'Writing', title: 'Interaction', text: 'Generating context-aware dialogue.', image: ASSETS.ops_dash }] },
+                        { title: 'Cutscene Script', icon: <Film />, tools: ['GPT-4', 'Runway'], details: 'Shot lists and camera angles.', subSteps: [{ phase: 'Scripting', title: 'Shot List', text: 'Converting narrative to camera script.', image: ASSETS.video_cam }] },
+                        { title: 'Consistency', icon: <CheckCircle />, tools: ['RAG', 'Vector DB'], details: 'Conflict detection and fact checking.', subSteps: [{ phase: 'QA', title: 'Logic Check', text: 'Detecting lore contradictions.', image: ASSETS.code_screen }] }
+                    ]
+                },
+                { 
+                    id: 'C', category: 'Design', title: 'AI Level Design', description: 'Integrated pipeline for world structure and blockout.', visualType: 'image', colorClass: 'bg-red-500', afterImage: ASSETS.level_layout,
+                    efficiency: { title: 'Efficiency Gains', items: [{ label: 'Layout', old: '1 Week', new: '30 Mins', gain: '50x' }, { label: 'Blockout', old: '3 Days', new: '1 Hour', gain: '24x' }] },
+                    subCategories: [
+                        { title: '0. Pain Points & Solution', icon: <Target />, tools: [], details: 'Bridging the gap between concept and 3D.', subSteps: [{ phase: 'Problem', title: 'Disconnect', text: 'Level design is often disconnected from art. ALD-X bridges this gap.', image: ASSETS.level_layout }] },
+                        { title: 'World Structure', icon: <Globe />, tools: ['WorldLabs'], details: 'Region logic and geo-narrative.', subSteps: [{ phase: 'Logic', title: 'Zoning', text: 'Defining combat and safe zones.', image: ASSETS.level_layout }, { phase: 'Narrative', title: 'Storytelling', text: 'Placing environmental narrative clues.', image: ASSETS.level_layout }] },
+                        { title: 'Spatial Layout', icon: <MapIcon />, tools: ['Wanxiang', 'Midjourney', 'ComfyUI'], details: 'Top-down skeletons and pacing.', subSteps: [{ phase: 'Layout', title: 'Tension Map', text: 'Visualizing flow and danger levels.', image: ASSETS.level_heat }, { phase: 'Route', title: 'Pathfinding', text: 'Generating main and side routes.', image: ASSETS.level_layout }] },
+                        { title: 'Encounter', icon: <Skull />, tools: ['GPT-5', 'Claude 3.5', 'Unreal Engine'], details: 'Monster ecology and spawn points.', subSteps: [{ phase: 'Combat', title: 'Spawning', text: 'Placing mob spawn points.', image: ASSETS.level_layout }] },
+                        { title: 'Atmosphere', icon: <Lightbulb />, tools: ['Hailuo', 'Midjourney'], details: 'Moodboards and lighting paths.', subSteps: [{ phase: 'Visuals', title: 'Moodboard', text: 'Defining color temperature and fog.', image: ASSETS.art_env }] },
+                        { title: 'Blueprint', icon: <FileText />, tools: ['Wanxiang', 'ComfyUI', 'Figma'], details: 'Technical drawings for 3D.', subSteps: [{ phase: 'Docs', title: 'Specs', text: 'Generating metric scale references.', image: ASSETS.design_flow }] },
+                        { title: '3D Blockout', icon: <Box />, tools: ['Rodin', 'Meshy', 'Unscreen', 'UE5'], details: 'Automated rough models.', subSteps: [{ phase: '3D', title: 'Prototyping', text: 'Converting 2D maps to 3D meshes.', image: ASSETS.model_3d }] }
+                    ]
+                },
+                { 
+                    id: 'D', category: 'Audio', title: 'AI Audio (AAS-X)', description: 'Complete audio production from Foley to Music.', visualType: 'image', colorClass: 'bg-yellow-500', afterImage: ASSETS.audio_wave,
+                    efficiency: { title: 'Efficiency Gains', items: [{ label: 'SFX', old: 'Days', new: 'Hours', gain: '20x' }, { label: 'Music', old: 'Weeks', new: 'Mins', gain: '100x' }] },
+                    subCategories: [
+                        { title: '0. Pain Points & Solution', icon: <Target />, tools: [], details: 'Solving expensive foley and slow iteration.', subSteps: [{ phase: 'Problem', title: 'Cost', text: 'Foley recording is expensive. AAS-X automates source generation.', image: ASSETS.audio_wave }] },
+                        { title: 'Semantic Breakdown', icon: <FileText />, tools: ['GPT-4', 'Obsidian'], details: 'Structuring sound needs.', subSteps: [{ phase: 'Planning', title: 'Analysis', text: 'Breaking down audio needs by action.', image: ASSETS.design_flow }] },
+                        { title: 'Source Gen', icon: <Music />, tools: ['Suno', 'Stability Audio', 'Soundly'], details: 'Generating raw foley and textures.', subSteps: [{ phase: 'Gen', title: 'Texture', text: 'Creating "Cracked Porcelain" sounds.', image: ASSETS.audio_wave }] },
+                        { title: 'Layering', icon: <Layers />, tools: ['Wwise', 'GPT-4'], details: 'Automated mixing and spatialization.', subSteps: [{ phase: 'Design', title: 'Mixing', text: 'Layering attack, body, and tail.', image: ASSETS.audio_wave }] },
+                        { title: 'Adaptive Music', icon: <Music />, tools: ['Suno', 'Wwise'], details: 'Dynamic loops for game states.', subSteps: [{ phase: 'Music', title: 'Loops', text: 'Generating battle and explore loops.', image: ASSETS.audio_wave }] },
+                        { title: 'Cinematic Voice', icon: <Film />, tools: ['Hailuo', 'ElevenLabs', 'Unscreen'], details: 'Lip-sync ready voiceovers.', subSteps: [{ phase: 'VO', title: 'Sync', text: 'Matching audio to video beats.', image: ASSETS.video_cam }] },
+                        { title: 'Implementation', icon: <Cpu />, tools: ['Wwise', 'Unreal Engine 5'], details: 'Wwise and UE5 integration.', subSteps: [{ phase: 'Engine', title: 'Wwise', text: 'Auto-generating event trees.', image: ASSETS.code_screen }] }
+                    ]
+                },
+                { 
+                    id: 'E', category: 'Animation', title: 'AI Animation (AAS)', description: 'Universal motion generation pipeline.', visualType: 'slider', colorClass: 'bg-orange-500', beforeImage: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&q=80", afterImage: "https://images.unsplash.com/photo-1633179730815-6d5542634615?w=800&q=80",
+                    efficiency: { title: 'Efficiency Gains', items: [{ label: 'Mocap', old: 'Expensive', new: 'Video', gain: '90% Cost' }, { label: 'Facial', old: 'Days', new: 'Mins', gain: '50x' }] },
+                    subCategories: [
+                        { title: '0. Pain Points & Solution', icon: <Target />, tools: [], details: 'Eliminating expensive mocap hardware.', subSteps: [{ phase: 'Problem', title: 'Hardware', text: 'Mocap suits are expensive. AAS uses video input.', image: ASSETS.anim_mocap }] },
+                        { title: 'Semantics', icon: <FileText />, tools: ['GPT-4', 'Planning'], details: 'Defining motion logic.', subSteps: [{ phase: 'Plan', title: 'State Machine', text: 'Defining Idle-Walk-Run transitions.', image: ASSETS.anim_mocap }] },
+                        { title: 'Motion Source', icon: <Film />, tools: ['Unscreen', 'DeepMotion', 'Move.ai'], details: 'Video to 3D motion.', subSteps: [{ phase: 'Capture', title: 'Video Input', text: 'Converting video to FBX.', image: ASSETS.anim_mocap }, { phase: 'Capture', title: 'Pose Sheet', text: 'Generating key poses.', image: ASSETS.anim_mocap }] },
+                        { title: 'AI Correction', icon: <Zap />, tools: ['Cascadeur', 'Blender AI'], details: 'Physics-based cleanup.', subSteps: [{ phase: 'Fix', title: 'IK', text: 'Fixing foot sliding.', image: ASSETS.anim_mocap }] },
+                        { title: 'Facial', icon: <User />, tools: ['ElevenLabs', 'Audio2Face', 'Live Link'], details: 'Audio to face animation.', subSteps: [{ phase: 'Face', title: 'Lip Sync', text: 'Generating mouth movement from audio.', image: ASSETS.model_3d }] },
+                        { title: 'Cinematic', icon: <Film />, tools: ['Hailuo', 'Runway', 'Suno'], details: 'Previz and blocking.', subSteps: [{ phase: 'Previz', title: 'Scene', text: 'Generating fight choreography.', image: ASSETS.video_cam }] },
+                        { title: 'Integration', icon: <Cpu />, tools: ['Unity', 'Unreal Engine', 'Python'], details: 'Engine import automation.', subSteps: [{ phase: 'Engine', title: 'Import', text: 'Auto-setup of blend trees.', image: ASSETS.code_screen }] }
+                    ]
+                },
+                { 
+                    id: 'F', category: 'Tech', title: 'AI Engineering', description: 'Code gen, debug, and tooling system.', visualType: 'image', colorClass: 'bg-blue-600', afterImage: ASSETS.code_screen,
+                    efficiency: { title: 'Efficiency Gains', items: [{ label: 'Scaffold', old: 'Days', new: 'Seconds', gain: '100x' }, { label: 'Tools', old: 'Weeks', new: 'Hours', gain: '20x' }] },
+                    subCategories: [
+                        { title: '0. Pain Points & Solution', icon: <Target />, tools: [], details: 'Reducing repetitive coding.', subSteps: [{ phase: 'Problem', title: 'Repetition', text: 'Boilerplate code wastes time. AI scaffolds instantly.', image: ASSETS.code_screen }] },
+                        { title: 'Code Gen', icon: <Terminal />, tools: ['Cursor', 'Copilot'], details: 'Template-based generation.', subSteps: [{ phase: 'Code', title: 'Templates', text: 'Generating controller scripts.', image: ASSETS.code_screen }, { phase: 'Code', title: 'Blueprint to C++', text: 'Converting logic to C++.', image: ASSETS.code_screen }] },
+                        { title: 'Refactoring', icon: <RotateCw />, tools: ['Refactor AI', 'SonarQube AI'], details: 'Auto-cleanup and optimization.', subSteps: [{ phase: 'Clean', title: 'Optimize', text: 'Removing redundant code.', image: ASSETS.code_screen }] },
+                        { title: 'Debug', icon: <Settings />, tools: ['Log Analyzer AI', 'Sentry AI'], details: 'Log analysis and diagnostics.', subSteps: [{ phase: 'Fix', title: 'Analysis', text: 'Identifying root causes.', image: ASSETS.code_screen }] },
+                        { title: 'Tooling', icon: <Box />, tools: ['Python', 'Editor Scripting'], details: 'Custom editor tools.', subSteps: [{ phase: 'Tools', title: 'Editor', text: 'Generating batch renamers.', image: ASSETS.code_screen }] },
+                        { title: 'Data Systems', icon: <Database />, tools: ['Excel AI', 'JSON Gen'], details: 'Table generation.', subSteps: [{ phase: 'Data', title: 'Tables', text: 'Populating CSVs.', image: ASSETS.code_screen }] },
+                        { title: 'Integration', icon: <Cpu />, tools: ['Unreal Python', 'Unity API'], details: 'Engine asset logic.', subSteps: [{ phase: 'Engine', title: 'Setup', text: 'Configuring blueprints.', image: ASSETS.code_screen }] },
+                        { title: 'Docs', icon: <FileText />, tools: ['DocGen AI'], details: 'Auto-documentation.', subSteps: [{ phase: 'Docs', title: 'API', text: 'Generating API references.', image: ASSETS.code_screen }] }
+                    ]
+                },
+                { 
+                    id: 'G', category: 'Ops', title: 'AI Ops & Loc', description: 'Localization, support, and LiveOps system.', visualType: 'image', colorClass: 'bg-amber-800', afterImage: ASSETS.ops_dash,
+                    efficiency: { title: 'Efficiency Gains', items: [{ label: 'Trans', old: 'Weeks', new: 'Hours', gain: '50x' }, { label: 'Support', old: 'Manual', new: 'AI', gain: '80% Cost' }] },
+                    subCategories: [
+                        { title: '0. Pain Points & Solution', icon: <Target />, tools: [], details: 'Automating global ops.', subSteps: [{ phase: 'Problem', title: 'Scale', text: 'Manual support doesnt scale. AI bots do.', image: ASSETS.ops_dash }] },
+                        { title: 'Loc Core', icon: <Globe />, tools: ['DeepL', 'GPT-4', 'TermBase AI'], details: 'Multi-language translation.', subSteps: [{ phase: 'Trans', title: 'Text', text: 'Translating 20+ languages.', image: ASSETS.ops_dash }] },
+                        { title: 'Engine Auto', icon: <Cpu />, tools: ['Unity Localization', 'UE5 Loc Dashboard'], details: 'In-engine table generation.', subSteps: [{ phase: 'Engine', title: 'Import', text: 'Auto-generating loc tables.', image: ASSETS.ops_dash }] },
+                        { title: 'Culture', icon: <Globe />, tools: ['Azure Content Safety', 'Culture AI'], details: 'Cultural sensitivity check.', subSteps: [{ phase: 'Check', title: 'Audit', text: 'Scanning for taboos.', image: ASSETS.ops_dash }] },
+                        { title: 'Support', icon: <MessageSquare />, tools: ['HelpShift AI', 'Intercom AI', 'Discord Bot'], details: 'AI Customer Service.', subSteps: [{ phase: 'Bot', title: 'Reply', text: 'Auto-answering tickets.', image: ASSETS.ops_dash }] },
+                        { title: 'LiveOps', icon: <Rocket />, tools: ['Copy.ai', 'Midjourney'], details: 'Event content generation.', subSteps: [{ phase: 'Ops', title: 'Events', text: 'Generating event copy.', image: ASSETS.ops_dash }] },
+                        { title: 'BI Data', icon: <TrendingUp />, tools: ['Tableau AI', 'Python Pandas'], details: 'Automated analysis.', subSteps: [{ phase: 'Data', title: 'Dashboard', text: 'Visualizing retention.', image: ASSETS.ops_dash }] }
+                    ]
+                },
+                { 
+                    id: 'H', category: 'Video', title: 'AI Video Pipeline', description: 'End-to-end trailer production.', visualType: 'image', colorClass: 'bg-purple-600', afterImage: ASSETS.video_cam,
+                    efficiency: { title: 'Efficiency Gains', items: [{ label: 'Script', old: 'Days', new: 'Hour', gain: '50x' }, { label: 'Prod', old: 'Months', new: 'Days', gain: '30x' }] },
+                    subCategories: [
+                        { title: '0. Pain Points & Solution', icon: <Target />, tools: [], details: 'Reducing high trailer costs.', subSteps: [{ phase: 'Problem', title: 'Cost', text: 'Trailers cost $50k+. AI does it for cheap.', image: ASSETS.video_cam }] },
+                        { title: 'Creative', icon: <FileText />, tools: ['GPT-4', 'Claude'], details: 'Script and hooks.', subSteps: [{ phase: 'Idea', title: 'Script', text: 'Generating 30s trailer script.', image: ASSETS.video_cam }] },
+                        { title: 'Storyboard', icon: <Palette />, tools: ['Midjourney', 'Wanxiang', 'Hailuo'], details: 'Visual planning.', subSteps: [{ phase: 'Plan', title: 'Board', text: 'Generating keyframes.', image: ASSETS.video_cam }] },
+                        { title: 'Shot Gen', icon: <Film />, tools: ['Runway Gen-2', 'Pika', 'Hailuo'], details: 'Cinematic movement.', subSteps: [{ phase: 'Shot', title: 'VFX', text: 'Generating dynamic shots.', image: ASSETS.video_cam }] },
+                        { title: 'Animation', icon: <User />, tools: ['Move.ai', 'DeepMotion', 'Kinetix'], details: 'Character compositing.', subSteps: [{ phase: 'Comp', title: 'Scene', text: 'Blending char into BG.', image: ASSETS.video_cam }] },
+                        { title: 'Audio', icon: <Music />, tools: ['Suno', 'ElevenLabs', 'Difftone'], details: 'Score and SFX.', subSteps: [{ phase: 'Sound', title: 'Mix', text: 'Adding epic music.', image: ASSETS.video_cam }] },
+                        { title: 'Editing', icon: <Film />, tools: ['Premiere AI', 'Davinci Resolve'], details: 'Auto-cutting.', subSteps: [{ phase: 'Post', title: 'Cut', text: 'Beat-sync editing.', image: ASSETS.video_cam }] },
+                        { title: 'Delivery', icon: <Settings />, tools: ['Topaz Video AI', 'DaVinci'], details: 'Grading and export.', subSteps: [{ phase: 'Final', title: 'Render', text: '4K Upscaling.', image: ASSETS.video_cam }] }
+                    ]
+                },
+                { 
+                    id: 'I', category: 'Design', title: 'AI Game Design', description: 'System, balance, and doc automation.', visualType: 'image', colorClass: 'bg-green-600', afterImage: ASSETS.design_flow,
+                    efficiency: { title: 'Efficiency Gains', items: [{ label: 'Ideation', old: 'Weeks', new: 'Hours', gain: '50x' }, { label: 'Docs', old: 'Weeks', new: 'Auto', gain: '100x' }] },
+                    subCategories: [
+                        { title: '0. Pain Points & Solution', icon: <Target />, tools: [], details: 'From feeling to data-driven.', subSteps: [{ phase: 'Problem', title: 'Guesswork', text: 'Balancing is hard. AI simulates it.', image: ASSETS.design_flow }] },
+                        { title: 'Ideation', icon: <Lightbulb />, tools: ['GPT-4', 'Claude'], details: 'Core loops and concepts.', subSteps: [{ phase: 'Concept', title: 'Loop', text: 'Defining core gameplay loop.', image: ASSETS.design_flow }] },
+                        { title: 'Systems', icon: <Settings />, tools: ['Claude', 'Mermaid'], details: 'Mechanic design.', subSteps: [{ phase: 'Design', title: 'Mechanics', text: 'Designing combat systems.', image: ASSETS.design_flow }] },
+                        { title: 'Balance', icon: <TrendingUp />, tools: ['Machinations', 'Python', 'Excel AI'], details: 'Economy simulation.', subSteps: [{ phase: 'Sim', title: 'Economy', text: 'Balancing gold drop rates.', image: ASSETS.design_flow }] },
+                        { title: 'Content', icon: <Box />, tools: ['GPT-4', 'Midjourney'], details: 'Enemy and item gen.', subSteps: [{ phase: 'Gen', title: 'Items', text: 'Creating loot tables.', image: ASSETS.design_flow }] },
+                        { title: 'Narrative', icon: <FileText />, tools: ['World Anvil AI'], details: 'Story integration.', subSteps: [{ phase: 'Story', title: 'Quest', text: 'Linking story to gameplay.', image: ASSETS.design_flow }] },
+                        { title: 'Proto', icon: <Gamepad2 />, tools: ['Unity ML-Agents', 'Simulations'], details: 'Playtesting.', subSteps: [{ phase: 'Test', title: 'Sim', text: 'Simulating player behavior.', image: ASSETS.design_flow }] },
+                        { title: 'Docs', icon: <FileText />, tools: ['Notion AI', 'GPT-4'], details: 'GDD automation.', subSteps: [{ phase: 'Write', title: 'GDD', text: 'Generating full design docs.', image: ASSETS.design_flow }] }
+                    ]
+                },
+                { 
+                    id: 'J', category: '3D', title: 'AI 3D Pipeline', description: 'Concept to Engine 3D production.', visualType: 'image', colorClass: 'bg-indigo-500', afterImage: ASSETS.model_3d,
+                    efficiency: { title: 'Efficiency Gains', items: [{ label: 'Model', old: 'Weeks', new: 'Days', gain: '15x' }, { label: 'Texture', old: 'Days', new: 'Hour', gain: '50x' }] },
+                    subCategories: [
+                        { title: '0. Pain Points & Solution', icon: <Target />, tools: [], details: 'Lowering the 3D barrier.', subSteps: [{ phase: 'Problem', title: 'Barrier', text: '3D is hard. AI automates retopo/UV.', image: ASSETS.model_3d }] },
+                        { title: 'Concept', icon: <Box />, tools: ['Rodin', 'Meshy', 'Wanxiang', 'Midjourney'], details: '2D to 3D proxy.', subSteps: [{ phase: 'Gen', title: 'Proxy', text: 'Generating base mesh.', image: ASSETS.model_3d }] },
+                        { title: 'Retopo', icon: <Layers />, tools: ['Rodin', 'ZRemesher', 'Blender AI'], details: 'Auto topology.', subSteps: [{ phase: 'Opt', title: 'Mesh', text: 'Clean edge flow.', image: ASSETS.model_3d }] },
+                        { title: 'UV/Mat', icon: <Palette />, tools: ['Substance AI', 'Meshy', 'Midjourney'], details: 'PBR textures.', subSteps: [{ phase: 'Tex', title: 'PBR', text: 'Generating material maps.', image: ASSETS.model_3d }] },
+                        { title: 'Rigging', icon: <User />, tools: ['AccuRig', 'Mixamo', 'Cascadeur', 'Blender Rigify'], details: 'Auto-skeleton.', subSteps: [{ phase: 'Rig', title: 'Bone', text: 'Auto-weighting.', image: ASSETS.model_3d }] },
+                        { title: 'Anim', icon: <Film />, tools: ['DeepMotion', 'Cascadeur', 'Kinetix'], details: 'Motion applying.', subSteps: [{ phase: 'Move', title: 'Test', text: 'Applying run cycle.', image: ASSETS.model_3d }] },
+                        { title: 'Engine', icon: <Cpu />, tools: ['Unreal Engine', 'Unity'], details: 'UE5 setup.', subSteps: [{ phase: 'Imp', title: 'Asset', text: 'Setting up materials.', image: ASSETS.model_3d }] },
+                        { title: 'Docs', icon: <FileText />, tools: ['GPT-4'], details: 'Asset specs.', subSteps: [{ phase: 'Doc', title: 'Spec', text: 'Generating tech specs.', image: ASSETS.model_3d }] }
+                    ]
+                }
+            ];
+
+            const activeCases = lang === 'en' ? CASES_EN : CASES_ZH;
+            const filteredCases = activeTab === 'All' ? activeCases : activeCases.filter(c => categories.includes(c.category));
+
+            return (
+                <div className="min-h-screen">
+                    <nav className="fixed top-0 w-full z-40 bg-black/80 backdrop-blur-md border-b border-white/5">
+                        <div className="container-padding h-16 flex justify-between items-center">
+                            <div className="font-bold text-xl tracking-tighter text-white flex items-center gap-2"><div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-purple-600 rounded-lg flex items-center justify-center text-white"><Zap size={18}/></div>AI+ <span className="text-neutral-500">GAME</span></div>
+                            <div className="hidden md:flex gap-8 text-sm font-medium text-neutral-400">
+                                <a href="#work" className="hover:text-white">{t.nav_work}</a>
+                                <a href="#stack" className="hover:text-white">{t.nav_stack}</a>
+                                <button onClick={() => setShowAbout(true)} className="hover:text-white">{t.nav_about}</button>
+                                <a href="#contact" className="hover:text-white">{t.nav_contact}</a>
+                            </div>
+                            <div className="flex gap-4">
+                                <button onClick={() => setLang(lang === 'en' ? 'zh' : 'en')} className="text-xs font-bold text-white border border-white/20 px-3 py-1 rounded-full">EN / 中</button>
+                            </div>
+                        </div>
+                    </nav>
+
+                    {showAbout && <AboutMeOverlay onClose={() => setShowAbout(false)} lang={lang} translations={t} />}
+                    
+                    <ProjectDetail project={selectedProject} onClose={() => setSelectedProject(null)} lang={lang} translations={t} />
+
+                    <section className="relative pt-32 pb-20 px-4 text-center">
+                        <div className="inline-block mb-4 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-xs font-mono text-pink-400">{t.hero_role}</div>
+                        <h1 className="text-4xl md:text-6xl font-black text-white mb-6">BRIDGING <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-cyan-500">GAME & AI</span></h1>
+                        <div className="flex justify-center gap-4"><a href="#work" className="px-8 py-4 bg-white text-black font-bold rounded-lg flex items-center gap-2">{t.hero_btn} <ArrowRight size={18} /></a></div>
+                        <TechBackground />
+                    </section>
+
+                    <TechStack lang={lang} translations={t} />
+
+                    <section id="work" className="py-20 container-padding">
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {activeCases.map((item) => <CaseCard key={item.id} {...item} onClick={() => setSelectedProject(item)} lang={lang} />)}
+                         </div>
+                    </section>
+
+                    <footer id="contact" className="py-12 border-t border-white/10 bg-black relative z-10">
+                        <div className="container-padding flex flex-col md:flex-row justify-between items-center gap-6">
+                          <div className="text-left">
+                            <h4 className="text-white font-bold text-lg mb-1">{t.footer_title}</h4>
+                            <p className="text-neutral-500 text-sm">{t.footer_desc}</p>
+                          </div>
+                          <div className="flex gap-6">
+                             <a href="#" className="p-3 bg-white/5 rounded-full hover:bg-white/20 text-neutral-400"><Linkedin size={20} /></a>
+                             <a href="#" className="p-3 bg-white/5 rounded-full hover:bg-white/20 text-neutral-400"><Github size={20} /></a>
+                             <a href="#" className="p-3 bg-white/5 rounded-full hover:bg-white/20 text-neutral-400"><Mail size={20} /></a>
+                          </div>
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<Portfolio />);
+    </script>
+</body>
+</html>
